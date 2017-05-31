@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>  
+<html lang="zh-cn">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>Tornado Websocket</title>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts-all-3.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/dataTool.min.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/world.js"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=ZUONbpqGBsYGXNIYHicvbAbM"></script>
+    <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/bmap.min.js"></script>
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css')}}">
+    <script type="text/javascript" src=""></script>
+</head>  
+
+<body onload='onLoad();'>  
+    <div>
+        Message to send:   <input type="text" id="msg" />  
+      <input type="button" onclick="sendMsg();" value="发送" /> 
+    </div>
+    <div class="container-fluid" >
+        <div class="span6"><div id="container" style="height: 300px"></div></div>
+        <div class="span6"><h3>heehe</h3></div>
+    </div>
+</body>
+<script type="text/javascript">
+    cpuStart = 0;
+    cpuEnd = 5;
+    cpuStat = [0, 0, 0, 0, 0];
+    memStat = [0, 0, 0, 0, 0];
+</script>>
+<script type="text/javascript">  
+    var ws;  
+    function onLoad(){  
+        var count = 0;
+        ws = new WebSocket("ws://localhost:8080/ws");  
+        ws.onmessage = function(e){  
+            console.log(typeof(e.data));
+            console.log(cpuStart);
+            console.log(cpuEnd);
+            var app = {};
+            if (count == 0) {
+                count += 1;
+            } else {
+                stats = JSON.parse(e.data);
+                cpuStat.push(stats['cpu']);
+                memStat.push(stats['mem']);
+            }
+            statUpdate();
+            cpuStart += 1;
+            cpuEnd += 1
+        }  
+    } 
+</script>  
+<script type="text/javascript">
+    function sendMsg(){  
+        ws.send(document.getElementById('msg').value);  
+    }    
+</script>
+<script>
+    function statUpdate() {
+            var dom = document.getElementById("container");
+            var myChart = echarts.init(dom);
+            option = {
+            title : {
+                text: 'cpu和内存占用情况',
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            legend: {
+                data:['意向','预购','成交']
+            },
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar', 'stack', 'tiled']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            calculable : true,
+            xAxis : [
+                {
+                    type : 'category',
+                    boundaryGap : false,
+                    data : ['周一','周二','周三','周四','周五']
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'CPU占用率',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data:cpuStat.slice(cpuStart, cpuEnd)
+                },
+                {
+                    name:'内存占用率',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data:memStat.slice(cpuStart, cpuEnd)
+                }
+            ]
+        };      
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+</script>
+</html> 
+</html>  
+

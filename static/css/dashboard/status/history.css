@@ -1,0 +1,30 @@
+input#file-upload {
+	display: none;
+}
+
+div.progress {
+	margin-top: 15px;
+}
+
+div.form-datetime {
+	width: 100%;
+}
+
+div.form-datetime input#start-time,
+div.form-datetime input#end-time {
+	width: 90%;
+}
+
+p.loading {
+	margin: 20px 0;
+	text-align: center;
+}
+
+p.loading > img {
+	max-height: 32px;
+}
+
+div#line-chart,
+div#global-map {
+	min-height: 320px;
+}

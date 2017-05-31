@@ -8,6 +8,7 @@ import psutil
 import matplotlib.pyplot as plt
 import threading
 import random
+import multiprocessing
 
 #print "Welcome,current system is",os.name," 3 seconds late start to get data..."      
 time.sleep(3)  
@@ -16,9 +17,11 @@ line_num = 1
   
 #function of Get CPU State;  
 def getCPUstate(interval=0.5):  
-    #return (" CPU: " + str(psutil.cpu_percent(interval)) + "%")
-    print type(psutil.cpu_percent(interval))
+    #return  " CPU: " + str(psutil.cpu_percent(interval)) + "%"
     return  psutil.cpu_percent(interval)
+
+def getCPUstate1(interval=0.5):  
+    return  " CPU: " + str(psutil.cpu_percent(interval)) + "%"
 #function of Get Memory      
 def getMemorystate():   
         phymem = psutil.virtual_memory()  
@@ -27,7 +30,16 @@ def getMemorystate():
             str(int(phymem.used/1024/1024))+"M",  
             str(int(phymem.total/1024/1024))+"M"  
             )  
-        return line      
+        return line  
+
+def getMemorystate1():   
+        phymem = psutil.virtual_memory()  
+        line = "Memory: %5s%% %6s/%s"%(  
+            phymem.percent,  
+            str(int(phymem.used/1024/1024))+"M",  
+            str(int(phymem.total/1024/1024))+"M"  
+            )  
+        return phymem.percent     
 
 def bytes2human(n):      
         """    
@@ -56,7 +68,7 @@ def poll(interval):
         tot_after = psutil.net_io_counters()      
         pnic_after = psutil.net_io_counters(pernic=True)      
         # get cpu state      
-        cpu_state = getCPUstate(interval)      
+        cpu_state = getCPUstate1(interval)      
         # get memory      
         memory_state = getMemorystate()      
         return (tot_before, tot_after, pnic_before, pnic_after,cpu_state,memory_state)      
@@ -111,7 +123,7 @@ def refresh_window(tot_before, tot_after, pnic_before, pnic_after,cpu_state,memo
                         stats_after.packets_recv - stats_before.packets_recv,      
                 ))      
                 print("")      
-'''        
+'''
 try:      
         interval = 0      
         while 1:      
@@ -120,8 +132,8 @@ try:
                 interval = 1      
 except (KeyboardInterrupt, SystemExit):      
         pass  
-'''
 
+'''
 '''
 try:
     while True:
@@ -131,41 +143,18 @@ except(KeyboardInterrupt, SystemExit):
 '''
 
 
-
-class cpuTest(object):
-    """docstring for cpuTest"""
-    def __init__(self):
-        super(cpuTest, self).__init__()
-        self.data = [0]
-        self.count = 1
-
-
-    def plot(self):
-        senderThread = threading.Thread(target=self.gendata)
-        senderThread.setDaemon(True)
-        senderThread.start()
-        plt.figure(1)
-        plt.plot(range(0, self.count), self.data)
-        plt.show()
-
-    def gendata(self):
-        while True:
-            self.data.append(getCPUstate())
-            self.count += 1
-
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 
-#plt.axis([0, 100, 0, 1])
 
 plt.figure()
 plt.ion()
 
 
-#for i in range(100):
 while True:
     i = random.sample(range(0, 100), 1)
-    y = np.random.random()
+    y = getCPUstate()
     plt.subplot(2,2,1)
     plt.ylim(0, 1)
     plt.bar([0], [y])
@@ -181,5 +170,6 @@ while True:
     plt.subplot(2,2,4)     #第二个子图
     plt.title('R channel')
 
-    plt.pause(1)
+    plt.pause(0.5)
     plt.clf()
+'''

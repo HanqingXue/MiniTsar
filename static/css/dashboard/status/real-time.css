@@ -1,0 +1,72 @@
+div.modal label {
+	margin-top: 10px;
+}
+
+div#content {
+	width: 75%;
+}
+
+div#filters {
+	margin: 20px 0 0;
+}
+
+div#filters div.section {
+	background-color: #fafafa;
+	border: 2px solid #ccc;
+	margin: 5px 0;
+	overflow: hidden;
+	-webkit-border-radius: 4px;
+	   -moz-border-radius: 4px;
+	        border-radius: 4px;
+}
+
+div#filters div.section div.header {
+	background: #fff;
+	height: 40px;
+	overflow: hidden;
+	padding: 10px;
+	position: relative;
+}
+
+div#filters div.section div.header h5 {
+	font-weight: bold;
+}
+
+div#filters div.section div.header button.btn {
+	position: absolute;
+	top: 10px;
+}
+
+div#filters div.section div.header button.btn-primary {
+	right: 80px;
+}
+
+div#filters div.section div.header button.btn-info {
+	right: 10px;
+}
+
+div#filters div.section div.body {
+	border-top: 2px solid #ccc;
+	padding: 10px;
+}
+
+div#filters div.section div.body ul.attributes {
+	list-style: none;
+	margin: 0;
+}
+
+div#filters div.section div.body ul.attributes li.attribute {
+	display: inline-block;
+	*display: inline;
+	zoom: 1;
+	width: 24%;
+}
+
+table#vehicles tbody td.danger {
+	color: red;
+}
+
+div#instruction-modal select#instructions {
+	height: 160px;
+	outline: transparent;
+}
