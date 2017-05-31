@@ -56,8 +56,7 @@ def bytes2human(n):
                 if n >= prefix[s]:      
                         value = float(n) / prefix[s]      
                         return '%.2f %s' % (value, s)      
-        return '%.2f B' % (n)      
-        
+        return '%.2f B' % (n)              
         
 def poll(interval):      
         """Retrieve raw stats within an interval window."""      
@@ -123,6 +122,52 @@ def refresh_window(tot_before, tot_after, pnic_before, pnic_after,cpu_state,memo
                         stats_after.packets_recv - stats_before.packets_recv,      
                 ))      
                 print("")      
+
+def getDiskstate():
+    try:
+        disk_status = psutil.disk_usage('/')
+        total = disk_status[0]/(1024*1024*1024)
+        used = disk_status[1]/(1024*1024*1024)
+        free = disk_status[2]/(1024*1024*1024)
+        percent = disk_status[3]
+        diskStatus = {
+            'total':total,
+            'used': used,
+            'free': free,
+            'percent': percent
+        }
+        return diskStatus
+    except Exception as e:
+        raise e
+
+def getIostate():
+    try:
+        ioStatus = {
+            'read_count': psutil.disk_io_counters()[0],
+            'write_count': psutil.disk_io_counters()[1],
+            'read': psutil.disk_io_counters()[2]/(1024*1024*1024),
+            'write': psutil.disk_io_counters()[3]/(1024*1024*1024)
+        }
+        return ioStatus
+    except Exception as e:
+        raise e
+
+def getnetIostate():
+    try:
+        psutil.net_io_counters()
+        netIoStatus = {
+            'sent_byte': psutil.net_io_counters()[0]/(1024*1024),
+            'rec_byte': psutil.net_io_counters()[1]/(1024*1024),
+            'sent_packets': psutil.net_io_counters()[2],
+            'rec_packets': psutil.net_io_counters()[3]
+        }
+        return netIoStatus
+    except Exception as e:
+        raise e
+
+
+
+
 '''
 try:      
         interval = 0      
@@ -133,43 +178,4 @@ try:
 except (KeyboardInterrupt, SystemExit):      
         pass  
 
-'''
-'''
-try:
-    while True:
-        print getCPUstate()                
-except(KeyboardInterrupt, SystemExit):
-    pass
-'''
-
-
-'''
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-plt.figure()
-plt.ion()
-
-
-while True:
-    i = random.sample(range(0, 100), 1)
-    y = getCPUstate()
-    plt.subplot(2,2,1)
-    plt.ylim(0, 1)
-    plt.bar([0], [y])
-    plt.ylabel('CPU Cost')
-    plt.title('CPU Cost')
-
-    plt.subplot(2,2,2)     #第二个子图
-    plt.title('R channel')
-
-    plt.subplot(2,2,3)     #第二个子图
-    plt.title('R channel')
-
-    plt.subplot(2,2,4)     #第二个子图
-    plt.title('R channel')
-
-    plt.pause(0.5)
-    plt.clf()
 '''

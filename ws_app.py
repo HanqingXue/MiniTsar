@@ -19,16 +19,21 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         return True  
   
     def open(self): 
-        self.write_message(u'Connection Established')
+
+        self.write_message(getDiskstate())
         pass
   
     def on_message(self, message): 
         while True:
             cpu = getCPUstate()
             mem = getMemorystate1()
+            io = getIostate()
+            net = getnetIostate()
             stat = {
                 'cpu': cpu,
-                'mem': mem
+                'mem': mem,
+                'io': io,
+                'net': net
             }
             self.write_message(json.dumps(stat))  
   

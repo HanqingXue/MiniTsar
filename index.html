@@ -15,39 +15,71 @@
 </head>  
 
 <body onload='onLoad();'>  
-    <div>
-        Message to send:   <input type="text" id="msg" />  
+    <div class="container-fluid span12" >
+    <input type="text" id="msg" />  
       <input type="button" onclick="sendMsg();" value="发送" /> 
     </div>
     <div class="container-fluid" >
-        <div class="span6"><div id="container" style="height: 300px"></div></div>
-        <div class="span6"><h3>heehe</h3></div>
+        <div class="span4" id="container" style="height: 300px"></div>
+        <div class="span4" id="crucpu" style="height: 300px"></div>
+        <div class="span4" id="crumem" style="height: 300px"></div>
+    </div>
+    <div class="container-fluid">
+        <div class="span6" id="io" style="height: 300px"></div>
+        <div class="span6" id="disk" style="height: 300px"></div>
+    </div>
+    <div class="container-fluid">
+        <div class="span6" id="net_byte" style="height: 300px"></div>
+        <div class="span6" id="net_count" style="height: 300px"></div>
+
     </div>
 </body>
 <script type="text/javascript">
     cpuStart = 0;
     cpuEnd = 5;
-    cpuStat = [0, 0, 0, 0, 0];
-    memStat = [0, 0, 0, 0, 0];
+    cpuStat  = [0, 0, 0, 0, 0];
+    memStat  = [0, 0, 0, 0, 0];
+    io_read  = [0, 0, 0, 0, 0];
+    io_write = [0, 0, 0, 0, 0]
+    curCpuStat = 0;
+    curMemStat = 0;
+    count = 0;
+    disk = {}
+    net_recv_byte = [0, 0, 0, 0, 0];
+    net_sent_byte = [0, 0, 0, 0, 0];
+    net_sent_pack = [0, 0, 0, 0, 0];
+    net_recv_pack = [0, 0, 0, 0, 0];
 </script>>
 <script type="text/javascript">  
     var ws;  
     function onLoad(){  
-        var count = 0;
+        //var count = 0;
         ws = new WebSocket("ws://localhost:8080/ws");  
         ws.onmessage = function(e){  
-            console.log(typeof(e.data));
-            console.log(cpuStart);
-            console.log(cpuEnd);
             var app = {};
             if (count == 0) {
+                disk = JSON.parse(e.data);
                 count += 1;
             } else {
                 stats = JSON.parse(e.data);
                 cpuStat.push(stats['cpu']);
                 memStat.push(stats['mem']);
+                io_read.push(stats['io']['read_count']);
+                io_write.push(stats['io']['write_count']);
+                net_sent_byte.push(stats['net']['sent_byte']);
+                net_recv_byte.push(stats['net']['rec_byte']);
+                net_sent_pack.push(stats['net']['sent_packets']);
+                net_recv_pack.push(stats['net']['rec_packets']);
+                curCpuStat = stats['cpu'];  
+                curMemStat = stats['mem'];
             }
+            cruCpuStat();
+            cruMemStat();
+            cruIoStat();
+            diskStat();
             statUpdate();
+            netIoStat();
+            netIoCountStat();
             cpuStart += 1;
             cpuEnd += 1
         }  
@@ -60,17 +92,186 @@
 </script>
 <script>
     function statUpdate() {
-            var dom = document.getElementById("container");
-            var myChart = echarts.init(dom);
+            dom = document.getElementById("container");
+            myChart = echarts.init(dom);
             option = {
+                title : {
+                    text: 'cpu和内存占用情况',
+                },
+                tooltip : {
+                    trigger: 'axis'
+                },
+                legend: {
+                    data:['意向','预购','成交']
+                },
+                toolbox: {
+                    show : true,
+                    feature : {
+                        mark : {show: true},
+                        dataView : {show: true, readOnly: false},
+                        magicType : {show: true, type: ['line', 'bar', 'stack', 'tiled']},
+                        restore : {show: true},
+                        saveAsImage : {show: true}
+                    }
+                },
+                calculable : true,
+                xAxis : [
+                    {
+                        type : 'category',
+                        boundaryGap : false,
+                        data : ['5秒前','4秒前','3秒前','2秒前','1秒前']
+                    }
+                ],
+                yAxis : [
+                    {
+                        type : 'value'
+                    }
+                ],
+                series : [
+                    {
+                        name:'CPU占用率',
+                        type:'line',
+                        smooth:true,
+                        itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                        data:cpuStat.slice(cpuStart, cpuEnd)
+                    },
+                    {
+                        name:'内存占用率',
+                        type:'line',
+                        smooth:true,
+                        itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                        data:memStat.slice(cpuStart, cpuEnd)
+                    }
+                ]
+            };      
+
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+</script>
+<script>
+    function cruCpuStat () {
+        var dom = document.getElementById("crucpu");
+        var myChart = echarts.init(dom);
+        var  app = {};
+        var option = null;
+        var option = {
+            tooltip : {
+                formatter: "{a} <br/>{b} : {c}%"
+            },
+            toolbox: {
+                feature: {
+                    restore: {},
+                    saveAsImage: {}
+                    }
+                },
+                series: [
+                    {
+                        name: 'CPU占用率',
+                        type: 'gauge',
+                        detail: {formatter:'{value}%'},
+                        data: [{value: 50, name: '当前CPU使用率'}]
+                    }
+                ]
+            };          
+
+            setInterval(function () {
+                option.series[0].data[0].value = curCpuStat;
+                myChart.setOption(option, true);
+            },2000);
+            ;
+            if (option && typeof option === "object") {
+                myChart.setOption(option, true);
+            }
+        }
+</script>
+<script>
+    function cruMemStat () {
+        var dom = document.getElementById("crumem");
+        var myChart = echarts.init(dom);
+        var  app = {};
+        var option = null;
+        var option = {
+            tooltip : {
+                formatter: "{a} <br/>{b} : {c}%"
+            },
+            toolbox: {
+                feature: {
+                    restore: {},
+                    saveAsImage: {}
+                    }
+                },
+                series: [
+                    {
+                        name: '内存占用率',
+                        type: 'gauge',
+                        detail: {formatter:'{value}%'},
+                        data: [{value: 50, name: '当前内存使用率'}]
+                    }
+                ]
+            };          
+
+            setInterval(function () {
+                option.series[0].data[0].value = curMemStat;
+                myChart.setOption(option, true);
+            },2000);
+            ;
+            if (option && typeof option === "object") {
+                myChart.setOption(option, true);
+            }
+        }
+</script>
+<script>
+    function diskStat () {
+        var dom = document.getElementById("disk");
+        var myChart = echarts.init(dom);
+        var option = {
             title : {
-                text: 'cpu和内存占用情况',
+                text: '磁盘占用情况（单位：GB）',
+                x:'center'
+            },
+            tooltip : {
+                trigger: 'item',
+                formatter: "{a} <br/>{b} : {c} ({d}%)"
+            },
+            series : [
+                {
+                    name: '磁盘空间',
+                    type: 'pie',
+                    radius : '55%',
+                    center: ['50%', '60%'],
+                    data:[
+                        {value: disk['free'], name:'空余空间'},
+                        {value: disk['total'], name:'已使用空间'},
+                    ],
+                    itemStyle: {
+                        emphasis: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }         
+    }
+</script>
+<script>
+    function netIoStat () {
+        var dom = document.getElementById("net_byte");
+        var myChart = echarts.init(dom);
+        var  app = {};
+        var option = null;
+        var option = {
+            title : {
+                text: '网络流量统计（单位 M）',
             },
             tooltip : {
                 trigger: 'axis'
-            },
-            legend: {
-                data:['意向','预购','成交']
             },
             toolbox: {
                 show : true,
@@ -87,7 +288,7 @@
                 {
                     type : 'category',
                     boundaryGap : false,
-                    data : ['周一','周二','周三','周四','周五']
+                    data : ['5秒前','4秒前','3秒前','2秒前','1秒前']
                 }
             ],
             yAxis : [
@@ -97,22 +298,137 @@
             ],
             series : [
                 {
-                    name:'CPU占用率',
+                    name:'发数据',
                     type:'line',
                     smooth:true,
                     itemStyle: {normal: {areaStyle: {type: 'default'}}},
-                    data:cpuStat.slice(cpuStart, cpuEnd)
+                    data:net_sent_byte.slice(cpuStart, cpuEnd)
                 },
                 {
-                    name:'内存占用率',
+                    name:'收数据',
                     type:'line',
                     smooth:true,
                     itemStyle: {normal: {areaStyle: {type: 'default'}}},
-                    data:memStat.slice(cpuStart, cpuEnd)
+                    data:net_recv_byte.slice(cpuStart, cpuEnd)
                 }
             ]
         };      
-
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+</script>
+<script>
+    function cruIoStat () {
+        var dom = document.getElementById("io");
+        var myChart = echarts.init(dom);
+        var  app = {};
+        var option = null;
+        var option = {
+            title : {
+                text: 'IO 读写次数',
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar', 'stack', 'tiled']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            calculable : true,
+            xAxis : [
+                {
+                    type : 'category',
+                    boundaryGap : false,
+                    data : ['5秒前','4秒前','3秒前','2秒前','1秒前']
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'读次数',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data:io_read.slice(cpuStart, cpuEnd)
+                },
+                {
+                    name:'写次数',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data:io_write.slice(cpuStart, cpuEnd)
+                }
+            ]
+        };      
+        if (option && typeof option === "object") {
+            myChart.setOption(option, true);
+        }
+    }
+</script>
+<script>
+    function netIoCountStat () {
+        var dom = document.getElementById("net_count");
+        var myChart = echarts.init(dom);
+        var  app = {};
+        var option = null;
+        var option = {
+            title : {
+                text: '网络收发包统计',
+            },
+            tooltip : {
+                trigger: 'axis'
+            },
+            toolbox: {
+                show : true,
+                feature : {
+                    mark : {show: true},
+                    dataView : {show: true, readOnly: false},
+                    magicType : {show: true, type: ['line', 'bar', 'stack', 'tiled']},
+                    restore : {show: true},
+                    saveAsImage : {show: true}
+                }
+            },
+            calculable : true,
+            xAxis : [
+                {
+                    type : 'category',
+                    boundaryGap : false,
+                    data : ['5秒前','4秒前','3秒前','2秒前','1秒前']
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value'
+                }
+            ],
+            series : [
+                {
+                    name:'接收数据',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data: net_recv_pack.slice(cpuStart, cpuEnd)
+                },
+                {
+                    name:'发送数据',
+                    type:'line',
+                    smooth:true,
+                    itemStyle: {normal: {areaStyle: {type: 'default'}}},
+                    data: net_sent_pack.slice(cpuStart, cpuEnd)
+                }
+            ]
+        };      
         if (option && typeof option === "object") {
             myChart.setOption(option, true);
         }
